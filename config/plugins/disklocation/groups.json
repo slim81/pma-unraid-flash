@@ -1,0 +1,14 @@
+{
+    "1": {
+        "group_name": "EMC Disk Enclosure",
+        "group_color": "A6A6A6",
+        "tray_width": "200",
+        "tray_height": "70",
+        "grid_columns": "5",
+        "grid_rows": "5",
+        "disk_tray_direction": "h",
+        "grid_count": "row",
+        "tray_direction": "1",
+        "tray_start_num": "1"
+    }
+}

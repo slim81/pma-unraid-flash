@@ -1,0 +1,6 @@
+# Set cpu turbo boost off:
+00 23 * * * /usr/local/emhttp/plugins/tips.and.tweaks/scripts/rc.tweaks set_turbo off &> /dev/null
+
+# Set cpu turbo boost on:
+00 05 * * * /usr/local/emhttp/plugins/tips.and.tweaks/scripts/rc.tweaks set_turbo on &> /dev/null
+

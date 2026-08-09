@@ -1,0 +1,2 @@
+# Generated parity check schedule:
+0 0 * * 0 /usr/local/sbin/mdcmd check  &> /dev/null
