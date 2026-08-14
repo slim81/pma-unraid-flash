@@ -1,0 +1,5 @@
+{
+  "updateCheckCronSchedule": "0 06 * * *",
+  "templateMappings": {},
+  "skipTemplatePaths": []
+}

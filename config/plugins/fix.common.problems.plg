@@ -2,16 +2,21 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "fix.common.problems">
 <!ENTITY author "Lime Technology">
-<!ENTITY version "2025.05.29">
-<!ENTITY md5 "8a1f11999fd5db889ab743553c4afe7e">
+<!ENTITY version "2026.05.16">
+<!ENTITY md5 "30d53cc262a354c9db234f5e6d3b6ca3">
 <!ENTITY launch "Settings/FixProblems">
 <!ENTITY plugdir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY github "unraid/fix.common.problems">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/master/plugins/&name;.plg">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" icon="warning" min="6.7.0" support="https://forums.unraid.net/topic/47266-plugin-ca-fix-common-problems/">
+  <CHANGES>
+###2026.05.16
+- Fixed: Comparison of plugin URLs to account for a slight difference in how the new feed operates
 
-<CHANGES>
+###2025.08.06
+- Added: Option to not run docker update available checks
+
 ###2025.05.29
 - Fixed: Plugins not present within application feed were being misidentified with incorrect messaging if a replacement with identical filename was present
 - Fixed: Typo in some messages
@@ -807,24 +812,19 @@
 ###2016-05-08###
 - Initial Release
 </CHANGES>
-
-<!-- The 'pre-install' script. -->
-
-
-
-<!--
+  <!-- The 'pre-install' script. -->
+  <!--
 The 'source' file.
 -->
-<FILE Name="/boot/config/plugins/&name;/&name;-&version;-x86_64-1.txz" Run="upgradepkg --install-new">
-<URL>https://raw.githubusercontent.com/&github;/master/archive/&name;-&version;-x86_64-1.txz</URL>
-<MD5>&md5;</MD5>
-</FILE>
-
-<!--
+  <FILE Name="/boot/config/plugins/&name;/&name;-&version;-x86_64-1.txz" Run="upgradepkg --install-new">
+    <URL>https://raw.githubusercontent.com/&github;/master/archive/&name;-&version;-x86_64-1.txz</URL>
+    <MD5>&md5;</MD5>
+  </FILE>
+  <!--
 The 'post-install' script
 -->
-<FILE Run="/bin/bash">
-<INLINE>
+  <FILE Run="/bin/bash">
+    <INLINE>
 rm -f $(ls /boot/config/plugins/&name;/&name;*.txz 2&gt;/dev/null | grep -v '&version;')
 /usr/local/emhttp/plugins/fix.common.problems/scripts/applyFrequency.php
 mkdir -p /boot/config/plugins/fix.common.problems/scripts/
@@ -832,19 +832,18 @@ rm -rf /tmp/fix.common.problems/errors.json
 echo ""
 echo "----------------------------------------------------"
 echo " &name; has been installed."
-echo " Copyright 2020-2024, Lime Technology"
-echo " Copyright 2016-2024, Andrew Zawadzki"
+echo " Copyright 2020-2026, Lime Technology"
+echo " Copyright 2016-2026, Andrew Zawadzki"
 echo " Version: &version;"
 echo "----------------------------------------------------"
 echo ""
 </INLINE>
-</FILE>
-
-<!--
+  </FILE>
+  <!--
 The 'remove' script.
 -->
-<FILE Run="/bin/bash" Method="remove">
-<INLINE>
+  <FILE Run="/bin/bash" Method="remove">
+    <INLINE>
 removepkg &name;-&version;-x86_64-1
 rm -rf /usr/local/emhttp/plugins/fix.common.problems
 rm -f /etc/cron.hourly/fix.common.problems.sh
@@ -852,5 +851,5 @@ rm -f /etc/cron.daily/fix.common.problems.sh
 rm -f /etc/cron.weekly/fix.common.problems.sh
 rm -f /etc/cron.monthly/fix.common.problems.sh
 </INLINE>
-</FILE> 
+  </FILE>
 </PLUGIN>

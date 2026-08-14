@@ -1,0 +1,257 @@
+<?xml version='1.0' standalone='yes'?>
+<!DOCTYPE PLUGIN [
+<!ENTITY name      "iscsi-initiator">
+<!ENTITY author    "ich777">
+<!ENTITY version   "2025.03.17">
+<!ENTITY md5       "76f3724fcb3a4e23bbf05f56a40d73ae">
+<!ENTITY launch    "Settings/&name;">
+<!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
+<!ENTITY plugin    "/boot/config/plugins/&name;">
+<!ENTITY pluginURL "https://raw.githubusercontent.com/ich777/&name;/master/&name;.plg">
+]>
+
+<PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="6.9.2" support="https://forums.unraid.net/topic/113270-plugin-iscsi-initiator/">
+
+<CHANGES>
+
+###2025.03.17
+- Compatibility update for Unraid 7.1.0-beta.1
+
+###2024.05.31
+- Bumped version - based on Open-iSCSI v2.1.10
+
+###2024.04.29
+- Fix an issue for Unraid 6.13.0+ where libcrypto is not found
+
+###2023.06.15
+- Bumped version - based on Open-iSCSI v2.1.9
+
+###2023.03.28
+- Fixed issue when changing Initiator Name
+- Added Reconnect button
+- Show more information when establishing/removing connection
+
+###2022.09.27
+- Bumped version - based on Open-iSCSI v2.1.8
+
+###2022.03.17
+- Fixed bug where only first target is connected on boot - thank you wraith1385 for the report
+
+###2022.02.15
+- Bumped version - based on Open-iSCSI v2.1.6
+
+###2021.11.11
+- Updated plugin to be compatible with 6.10.0-rc3
+
+###2021.09.17
+- Fixed plugin to escape variables properly
+
+###2021.09.13
+- Fixed bug where iscsid.conf was not created on USB Boot device
+
+###2021.09.02
+- Initial Release
+
+</CHANGES>
+
+<FILE Run="/bin/bash">
+<INLINE>
+rm -f $(ls &plugin;/iscsi.initiator*.txz 2>/dev/null|grep -v '&version;')
+</INLINE>
+</FILE>
+
+<FILE Name="&plugin;/iscsi.initiator-&version;.txz" Run="upgradepkg --install-new">
+<URL>https://raw.githubusercontent.com/ich777/&name;/master/packages/iscsi.initiator-&version;.txz</URL>
+<MD5>&md5;</MD5>
+</FILE>
+
+<FILE Name="&plugin;/openssl-solibs-1.1.1m-x86_64-1.txz">
+<URL>https://raw.githubusercontent.com/ich777/&name;/master/packages/openssl-solibs-1.1.1m-x86_64-1.txz</URL>
+<MD5>3056e5e00f8cabd61d3c604f04c84afa</MD5>
+</FILE>
+
+<FILE Name="&plugdir;/README.md">
+<INLINE>
+**iSCSI Initiator**
+
+This Plugin allows you to connect to one or more iSCSI Target(s) and mount the Volume(s) to unRAID.
+</INLINE>
+</FILE>
+
+<FILE Run="/bin/bash">
+<INLINE>
+
+#Create initiator file if not found
+if [ ! -f "&plugin;/initiatorname.cfg" ]; then
+  echo "InitiatorName=iqn.2005-08.net.unraid:$(uuidgen -r)" > "&plugin;/initiatorname.cfg"
+fi
+
+#Create targets file if not found
+if [ ! -f "&plugin;/targets.cfg" ]; then
+  touch &plugin;/targets.cfg
+fi
+
+#Install libcrypto 1.1 if not found
+if [ ! -f /lib64/libcrypto.so.1.1 ]; then
+  echo
+  echo "------------libcrypto 1.1 not found, installing...-------------"
+  installpkg &plugin;/openssl-solibs-1.1.1m-x86_64-1.txz > /dev/null 2>&amp;1
+fi
+
+start_daemon() {
+  echo "iscsid --config=&plugin;/iscsid.conf --initiatorname=&plugin;/initiatorname.cfg" | at now
+}
+
+load_targets() {
+while read -r line
+do
+  TARGET_IQN="$(echo $line | awk '{print $1}')"
+  TARGET_IP="$(echo $line | awk '{print $2}')"
+  TARGET_PORT="$(echo $line | awk '{print $3}')"
+  echo "---Trying to connect to target: ${TARGET_IQN} through ${TARGET_IP}:${TARGET_PORT}---"
+  iscsiadm -m discovery -t sendtargets -p ${TARGET_IP}:${TARGET_PORT}
+  sleep 0.5
+  iscsiadm -m node -T ${TARGET_IQN} -p ${TARGET_IP}:${TARGET_PORT} --login
+  sleep 0.5
+done &lt; "&plugin;/targets.cfg"
+}
+
+if [ ! "$(find /lib/modules/*/kernel/drivers \( -name iscsi_tcp.ko.xz -o -name iscsi_tcp.ko \) 2>/dev/null)" ]; then
+  #Wait for Network and timeout after 30 seconds
+  HOST="8.8.8.8"
+  for i in {1..10}; do
+    ping -c1 $HOST &amp;> /dev/null &amp;&amp; break;
+  done
+
+  KERNEL_V="$(uname -r)"
+  PACKAGE="open_iscsi-plugin-${KERNEL_V}"
+  DL_URL="https://github.com/ich777/iscsi-initiator/releases/download/$KERNEL_V"
+
+  #Check for old packages
+  rm -rf $(ls -d &plugin;/packages/* | grep -v "${KERNEL_V%%-*}")
+
+  if [ ! -d "&plugin;/packages/${KERNEL_V%%-*}" ]; then
+    mkdir -p "&plugin;/packages/${KERNEL_V%%-*}"
+  fi
+
+  download() {
+  #Download Open-iSCSI Package
+  if wget -q -nc --show-progress --progress=bar:force:noscroll -O "&plugin;/packages/${KERNEL_V%%-*}/${PACKAGE}-1.txz" "${DL_URL}/${PACKAGE}-1.txz" ; then
+    if [ "$(md5sum "&plugin;/packages/${KERNEL_V%%-*}/${PACKAGE}-1.txz" | cut -d ' ' -f1)" != "$(wget -qO- "${DL_URL}/${PACKAGE}-1.txz.md5" | cut -d ' ' -f1)" ]; then
+      echo
+      echo "---CHECKSUM ERROR!---"
+      exit 1
+    fi
+    echo
+    echo "-------Successfully downloaded Open iSCSI, please wait...!------"
+  else
+    echo
+    echo "-------------------Can't download Open iSCSI--------------------"
+    exit 1
+  fi
+  }
+
+  check() {
+  if [ ! -f "&plugin;/packages/${KERNEL_V%%-*}/${PACKAGE}-1.txz" ]; then
+    echo
+    echo "--------------------Downloading Open iSCSI---------------------"
+    echo "---This could take some time, please don't close this window!---"
+    download
+  elif [ ! -s "&plugin;/packages/${KERNEL_V%%-*}/${PACKAGE}-1.txz" ]; then
+    rm -rf &plugin;/packages/${KERNEL_V%%-*}/${PACKAGE}-1.txz
+    echo
+    echo "----Download is empty please contact the developer of this plugin if the----"
+    echo "----------plugin has been already built against that Kernel version---------"
+    exit 1
+  else
+    echo
+    echo "------------Open iSCSI found locally, please wait...!----------"
+  fi
+  }
+
+  install() {
+  #Install Open iSCSI Package
+  /sbin/installpkg "&plugin;/packages/${KERNEL_V%%-*}/${PACKAGE}-1.txz"
+  depmod -a
+  /sbin/modprobe iscsi_tcp
+  }
+
+  #Check if Open iSCSI Package is already downloaded
+  check
+
+  #Check if iSCSI initiator module is already enabled
+  if [ -z "$(lsmod | grep "iscsi_tcp")" ]; then
+    echo
+    echo "-----Installing and loading Kernel Modules for Open iSCSI-----"
+    install > /dev/null
+  else
+    echo
+    echo "----------------Kernel Modules already enabled----------------"
+  fi
+else
+  if [ -z "$(lsmod | grep "iscsi_tcp")" ]; then
+    echo
+    echo "-------------Loading Kernel Module for Open iSCSI-------------"
+    /sbin/modprobe iscsi_tcp
+  fi
+  if [ -d "&plugin;/packages" ]; then
+    rm -rf "&plugin;/packages"
+  fi
+fi
+
+
+#Create config file if not found
+if [ ! -f "&plugin;/iscsid.conf" ]; then
+  cp /etc/iscsi/iscsid.conf &plugin;/iscsid.conf
+  rm -rf /etc/iscsi/iscsid.conf
+else
+  rm -rf /etc/iscsi/iscsid.conf
+fi
+
+if [ -z "$(pidof iscsid)" ]; then
+  echo
+  echo "--------------------Starting iSCSI Daemon---------------------"
+  start_daemon
+  if [ ! -z &plugin;/targets.cfg ]; then
+    load_targets
+  fi
+else
+  echo
+  echo "-----------------iSCSI Daemon already started-----------------"
+fi
+
+echo
+echo "-------------Installation of Open iSCSI successful-------------"
+echo
+
+echo
+echo "----------------------------------------------------------------"
+echo "-----------------Open iSCSI plugin installed--------------------"
+echo "----------------------------------------------------------------"
+</INLINE>
+</FILE>
+
+
+<FILE Run="/bin/bash" Method="remove">
+<INLINE>
+echo "------------------------------------"
+echo "---Uninstalling Open iSCSI plugin---"
+echo "------------------------------------"
+echo
+echo "---Logging out from all connected iSCSI sessions, please wait!---"
+echo
+iscsiadm -m node --logout
+sleep 0.5
+kill $(pidof iscsid)
+# Remove plugin related files
+removepkg iscsi.initiator-&version; > /dev/null 2>&amp;1
+rm -rf &plugin;
+rm -rf &plugdir;
+echo
+echo "-----------------------------"
+echo "---Open iSCSI uninstalled!---"
+echo "-----------------------------"
+echo
+</INLINE>
+</FILE>
+</PLUGIN>
