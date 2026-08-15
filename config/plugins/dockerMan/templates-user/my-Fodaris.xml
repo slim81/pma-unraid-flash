@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>Fodaris</Name>
+  <Repository>goodhallsolutions/fodaris:latest</Repository>
+  <Registry>https://hub.docker.com/r/goodhallsolutions/fodaris</Registry>
+  <Network>bridge</Network>
+  <MyIP/>
+  <MyMAC/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support/>
+  <Project>https://fodaris.co.uk</Project>
+  <ReadMe/>
+  <Overview>Fodaris - self-hosted monitoring and observability platform for homelabs and small businesses. Monitor servers, Docker containers, network devices (SNMP), websites, APIs, databases, and applications from a single dashboard.&#13;
+&#13;
+    Features: real-time metrics, alerting, uptime monitoring, IPAM, log viewer, network topology, and reporting. Agents available for Linux, Windows, macOS, and Docker.&#13;
+&#13;
+    Includes a built-in PostgreSQL database, TLS (auto-generated self-signed cert), and a React-based web UI accessible on port 8443.&#13;
+&#13;
+    After installation, open https://your-Unraid-ip:8443 and log in with admin / Fodaris2026. You will be prompted to change your password on first login.</Overview>
+  <Category>Tools:Utilities Network:Management</Category>
+  <WebUI>https://[IP]:[PORT:8443]/</WebUI>
+  <TemplateURL>https://raw.githubusercontent.com/Goodhall-Solutions-ltd/unraid-templates/main/fodaris-server.xml</TemplateURL>
+  <Icon>https://fodaris.co.uk/images/icon.png</Icon>
+  <ExtraParams>--pid=host</ExtraParams>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled>1786724504</DateInstalled>
+  <DonateText/>
+  <DonateLink/>
+  <Requires/>
+  <Config Name="Web UI Port (HTTPS)" Target="8443" Default="8443" Mode="tcp" Description="Port for the Fodaris web interface. Access via https://your-unraid-ip:8443" Type="Port" Display="always" Required="true" Mask="false">8443</Config>
+  <Config Name="Agent Ingest Port" Target="24443" Default="24443" Mode="tcp" Description="Port your Fodaris agents push metrics to. Keep this on your LAN; you do not need to open it to the internet. Your agents' Server URL should be https://your-unraid-ip:24443" Type="Port" Display="always" Required="true" Mask="false">24443</Config>
+  <Config Name="OpenTelemetry Ingest Port" Target="24444" Default="24444" Mode="tcp" Description="Port for OpenTelemetry collectors pushing OTLP/HTTP. Only needed if you push OTel metrics into Fodaris. Safe to leave open on the LAN." Type="Port" Display="always" Required="false" Mask="false">24444</Config>
+  <Config Name="Encryption Key" Target="FODARIS_ENCRYPTION_KEY" Default="" Mode="" Description="Secret key for encrypting stored data. Generate with: openssl rand -hex 32. Save this value &#x2014; if lost, stored data cannot be decrypted. Leave blank to auto-generate (key lost on container restart)." Type="Variable" Display="always" Required="false" Mask="true"/>
+  <Config Name="Server Name" Target="FODARIS_SERVER_NAME" Default="fodaris-core" Mode="" Description="Display name for this Fodaris server instance." Type="Variable" Display="always" Required="false" Mask="false">fodaris-core</Config>
+  <Config Name="Config" Target="/app/server/config" Default="/mnt/user/appdata/fodaris/config" Mode="rw" Description="Persistent storage for Fodaris configuration." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/fodaris/config</Config>
+  <Config Name="Data" Target="/app/server/data" Default="/mnt/user/appdata/fodaris/data" Mode="rw" Description="Persistent storage for the Fodaris database and metrics." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/fodaris/data</Config>
+  <Config Name="Backups" Target="/app/server/backups" Default="/mnt/user/appdata/fodaris/backups" Mode="rw" Description="Persistent storage for Fodaris backups." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/fodaris/backups</Config>
+  <Config Name="Metric Retention (days)" Target="FODARIS_RETENTION_DAYS" Default="30" Mode="" Description="How many days of metric history to retain. Higher values use more disk space." Type="Variable" Display="advanced" Required="false" Mask="false">30</Config>
+  <Config Name="TLS Certificates (optional)" Target="/app/certs" Default="" Mode="ro" Description="Optional: path to a directory containing fodaris.crt and fodaris.key for custom TLS. Leave blank to use the auto-generated self-signed certificate." Type="Path" Display="advanced" Required="false" Mask="false"/>
+  <Config Name="Host /proc" Target="/host/proc" Default="/proc" Mode="ro" Description="Mounts the host process filesystem so Fodaris can monitor host processes and sensors." Type="Path" Display="advanced" Required="false" Mask="false">/proc</Config>
+  <Config Name="Host /sys" Target="/host/sys" Default="/sys" Mode="ro" Description="Mounts the host sysfs so Fodaris can read hardware sensor data." Type="Path" Display="advanced" Required="false" Mask="false">/sys</Config>
+  <Config Name="Docker Socket" Target="/var/run/docker.sock" Default="/var/run/docker.sock" Mode="ro" Description="Grants Fodaris read-only access to Docker for container monitoring." Type="Path" Display="advanced" Required="false" Mask="false">/var/run/docker.sock</Config>
+  <TailscaleStateDir/>
+</Container>
